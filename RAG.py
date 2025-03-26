@@ -123,7 +123,7 @@ class Rag:
                 dim=1)
         return embeddings.squeeze().cpu().numpy()
 
-    async def rewrite(self, user_query):
+    async def generateSQL(self, user_query):
         pass
 
     async def rerank(self, query, docs):
