@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="icon" type="image/x-icon" href="/static/icon.png" />
+    <link href="/static/font.css" rel="stylesheet" />
+    <title>File Upload</title>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      #upload-form {
+        display: flex;
+        flex-direction: column;
+        width: 300px;
+        margin: 20px auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      label {
+        margin-bottom: 5px;
+      }
+      input[type="file"] {
+        margin-bottom: 10px;
+      }
+      button {
+        padding: 10px 15px;
+        background-color: #0f3c69;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      #status-message {
+        margin-top: 10px;
+      }
+
+      .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        background-color: #0f3c69;
+        padding-left: 5%;
+        padding-right: 5%;
+      }
+
+      .logo-section {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .logo-section img {
+        width: 55px;
+        height: 56px;
+        object-fit: contain;
+        background-color: white;
+        margin: 0;
+        border-radius: 1px;
+        border-color: black;
+      }
+
+      .logo-section h1 {
+        margin: 0;
+        color: white;
+        font-size: 1.5rem;
+        font-weight: 600;
+        font-family: "Inter", sans-serif;
+      }
+
+      .nav-buttons {
+        display: flex;
+        gap: 12px;
+      }
+
+      .nav-button {
+        background-color: #f7b90f;
+        color: #0f3c69;
+        padding: 10px 16px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid transparent;
+      }
+
+      .nav-button:hover {
+        background-color: #ffffff;
+        border-color: #f7b90f;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      .department-select-container {
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .department-select-container label {
+        font-weight: 500;
+        color: #374151;
+      }
+
+      .department-select-container select {
+        padding: 8px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        color: #2d3748;
+        background-color: white;
+        outline: none;
+        transition: border-color 0.2s ease;
+        font-family: "Inter", sans-serif;
+      }
+
+      .department-select-container select:focus {
+        border-color: #f7b90f;
+        box-shadow: 0 0 0 2px rgba(247, 185, 15, 0.2);
+      }
+      #status-message {
+        margin-top: 20px;
+      }
+
+      .file-box {
+        padding: 12px 18px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-family: "Inter", sans-serif;
+        font-weight: 500;
+      }
+
+      .file-box.success {
+        background-color: #d1fae5;
+        color: #065f46;
+        border: 1px solid #10b981;
+      }
+
+      .file-box.error {
+        background-color: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #ef4444;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header-container">
+      <div class="logo-section">
+        <img src="/static/icon.png" alt="ERDA Logo" />
+        <h1>ERDA Assistant</h1>
+      </div>
+      <div class="nav-buttons">
+        <a href="/" class="nav-button">ERDA Assistant</a>
+        <a href="/generalAI" class="nav-button">General AI</a>
+        <button
+          class="input-area nav-button"
+          style="background-color: red; color: white"
+          onclick="logout()"
+        >
+          Log out
+        </button>
+      </div>
+    </div>
+
+    <form id="upload-form">
+      <div class="department-select-container">
+        <label for="department-select">Select Department:</label>
+        <select id="department-select">
+          <option value="erda">ERDA</option>
+          <option value="finance">ERP</option>
+          <option value="hr">HR</option>
+          <option value="legal">LEGAL</option>
+          <option value="quality">QUALITY</option>
+          <option value="it">IT</option>
+          <!-- <option value="senseless">Test</option> -->
+          <option value="window">Window</option>
+        </select>
+      </div>
+      <label for="file-input">Choose File:</label>
+      <input type="file" id="file-input" multiple name="file" />
+      <button type="button" onclick="uploadFile()">Upload</button>
+      <div id="status-message"></div>
+    </form>
+
+    <script>
+      const statusMessage = document.getElementById("status-message");
+
+      function showStatusMessage(message, isSuccess = true) {
+        statusMessage.innerHTML = message; // Allows <br> support
+        statusMessage.className = isSuccess ? "success" : "error";
+        statusMessage.style.display = "block";
+
+        // Optional: Auto-hide after 5 seconds
+        setTimeout(() => {
+          statusMessage.style.display = "none";
+        }, 5000);
+      }
+      function uploadFile() {
+        const fileInput = document.getElementById("file-input");
+        const department = document.getElementById("department-select").value;
+        const files = fileInput.files;
+        const statusMessage = document.getElementById("status-message");
+
+        if (!files || files.length === 0) {
+          statusMessage.textContent = "Please select atleast one file.";
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("department", department);
+        for (let i = 0; i < files.length; i++) {
+          formData.append("files", files[i]);
+        }
+
+        statusMessage.textContent = "Uploading...";
+
+        //   fetch("/upload", {
+        //     method: "POST",
+        //     body: formData,
+        //   })
+        //     .then((response) => {
+        //       if (!response.ok) {
+        //         return response.text().then((err) => {
+        //           throw new Error(err);
+        //         });
+        //       }
+        //       return response.json();
+        //     })
+        //     .then((response) => {
+        //       return response.json().then((data) => {
+        //         if (!response.ok) {
+        //           throw new Error(data.detail || "Upload failed");
+        //         }
+        //         return data;
+        //       });
+        //     })
+        //     .then((data) => {
+        //       statusMessage.innerHTML = ""; // Clear previous messages
+        //       statusMessage.style.display = "block";
+
+        //       if (data.success.length > 0) {
+        //         data.success.forEach((filename) => {
+        //           const successBox = document.createElement("div");
+        //           successBox.className = "file-status success";
+        //           successBox.textContent = `✅ ${filename} uploaded successfully`;
+        //           statusMessage.appendChild(successBox);
+        //         });
+        //       }
+
+        //       if (data.failed.length > 0) {
+        //         data.failed.forEach((filename) => {
+        //           const errorBox = document.createElement("div");
+        //           errorBox.className = "file-status error";
+        //           errorBox.textContent = `❌ ${filename} failed to upload`;
+        //           statusMessage.appendChild(errorBox);
+        //         });
+        //       }
+
+        //       // Optional: Auto-hide after 5 seconds
+        //       setTimeout(() => {
+        //         statusMessage.style.display = "none";
+        //       }, 5000);
+        //     })
+        //     .catch((error) => {
+        //       statusMessage.innerHTML = "";
+        //       statusMessage.style.display = "block";
+
+        //       const errorBox = document.createElement("div");
+        //       errorBox.className = "file-status error";
+        //       errorBox.textContent = `Error uploading files: ${error.message}`;
+        //       statusMessage.appendChild(errorBox);
+
+        //       console.error("Error:", error);
+        //     });
+        // Frontend (JavaScript)
+        fetch("/upload", {
+          method: "POST",
+
+          body: formData,
+        })
+          .then(async (response) => {
+            const data = await response.json();
+
+            statusMessage.innerHTML = "";
+
+            statusMessage.style.display = "block";
+
+            if (!response.ok) {
+              throw data; // throw parsed JSON error
+            }
+
+            data.success.forEach((filename) => {
+              const successBox = document.createElement("div");
+
+              successBox.className = "file-box success";
+
+              successBox.textContent = `✅ ${filename} uploaded successfully`;
+
+              statusMessage.appendChild(successBox);
+            });
+
+            data.failed.forEach((filename) => {
+              const errorBox = document.createElement("div");
+
+              errorBox.className = "file-box error";
+
+              errorBox.textContent = `❌ ${filename} failed to upload`;
+
+              statusMessage.appendChild(errorBox);
+            });
+          })
+
+          .catch((errorData) => {
+            statusMessage.innerHTML = "";
+
+            statusMessage.style.display = "block";
+
+            if (errorData.total_files) {
+              errorData.success?.forEach((filename) => {
+                const successBox = document.createElement("div");
+
+                successBox.className = "file-box success";
+
+                successBox.textContent = `✅ ${filename} uploaded successfully`;
+
+                statusMessage.appendChild(successBox);
+              });
+
+              errorData.failed?.forEach((filename) => {
+                const errorBox = document.createElement("div");
+
+                errorBox.className = "file-box error";
+
+                errorBox.textContent = `❌ ${filename} failed to upload`;
+
+                statusMessage.appendChild(errorBox);
+              });
+            } else {
+              const generalError = document.createElement("div");
+
+              generalError.className = "file-box error";
+
+              generalError.textContent =
+                "❌ Unknown error occurred during upload.";
+
+              statusMessage.appendChild(generalError);
+            }
+          });
+      }
+
+      function logout() {
+        fetch("/logout")
+          .then((response) => {
+            if (response.redirected) {
+              window.location.href = response.url;
+            }
+          })
+          .catch((error) => {
+            console.error("Error logging-out:", error);
+          });
+      }
+    </script>
+  </body>
+</html>

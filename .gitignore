@@ -1,0 +1,10 @@
+pdfasker/
+__pycache__/
+archive/
+temp.png
+chunks.txt
+db/
+db.tar
+archive/
+1.txt
+debug/

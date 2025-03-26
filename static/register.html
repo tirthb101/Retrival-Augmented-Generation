@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="icon" type="image/x-icon" href="/static/icon.png" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ERDA PDF Asker - Register</title>
+    <link href="/static/font.css" rel="stylesheet" />
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background: #0f3c69;
+        height: 100vh;
+      }
+
+      .register-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+      }
+
+      .register-form {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        padding: 40px;
+        border-radius: 16px;
+        width: 350px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+
+      .register-form h2 {
+        text-align: center;
+        margin-bottom: 24px;
+        color: black;
+      }
+
+      .register-form label {
+        display: block;
+        margin-bottom: 8px;
+        color: black;
+      }
+
+      .register-form input[type="text"],
+      .register-form input[type="password"] {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        box-sizing: border-box;
+        font-size: 1rem;
+        font-family: "Inter", sans-serif;
+        outline: none;
+      }
+
+      .register-form button {
+        width: 100%;
+        background: #f7b90f;
+        color: black;
+        border: none;
+        border-radius: 8px;
+        padding: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: "Inter", sans-serif;
+      }
+
+      .register-form button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(91, 164, 223, 0.3);
+      }
+
+      .register-form button:active {
+        transform: translateY(0);
+      }
+
+      .error-message {
+        color: red;
+        margin-top: 10px;
+        text-align: center;
+      }
+      .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding: 12px 5% 12px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .logo-section {
+        display: flex;
+        padding-left: 5%;
+        padding-right: 5%;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .logo-section img {
+        width: 55px;
+        height: 56px;
+        object-fit: contain;
+        background-color: white;
+        margin: 0;
+        border-radius: 1px;
+        border-color: black;
+      }
+
+      .logo-section h1 {
+        margin: 0;
+        color: white;
+        font-size: 1.5rem;
+        font-weight: 600;
+        font-family: "Inter", sans-serif;
+      }
+      .nav-buttons {
+        display: flex;
+        gap: 12px;
+      }
+
+      .nav-button {
+        background-color: #f7b90f;
+        color: #0f3c69;
+        padding: 10px 16px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid transparent;
+      }
+
+      .nav-button:hover {
+        background-color: #ffffff;
+        border-color: #f7b90f;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      @media (max-width: 768px) {
+        .header-container {
+          flex-direction: column;
+          gap: 16px;
+          align-items: flex-start;
+        }
+
+        .nav-buttons {
+          width: 100%;
+          justify-content: space-between;
+        }
+
+        .nav-button {
+          flex: 1;
+          text-align: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header-container">
+      <div class="logo-section">
+        <img src="/static/icon.png" alt="ERDA Logo" />
+        <h1>ERDA Assistant</h1>
+      </div>
+      <div class="nav-buttons">
+        <a href="/login" class="nav-button">Login</a>
+      </div>
+    </div>
+    <div class="register-container">
+      <div class="register-form">
+        <h2>Register</h2>
+        <form id="register-form">
+          <label for="username">Username:</label>
+          <input type="text" id="username" name="username" required />
+
+          <label for="role">Role:</label>
+          <input type="text" id="role" name="role" required />
+
+          <label for="password">Password:</label>
+          <input type="password" id="password" name="password" required />
+
+          <button type="submit">Register</button>
+          <div id="error-message" class="error-message"></div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      const loginForm = document.getElementById("register-form");
+      const errorMessage = document.getElementById("error-message");
+
+      loginForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        const role = document.getElementById("role").value;
+
+        if (!username || !password || !role) {
+          errorMessage.textContent =
+            "Username, password  and role are required.";
+          return;
+        }
+
+        fetch("/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: `username=${encodeURIComponent(
+            username
+          )}&password=${encodeURIComponent(password)}&role=${encodeURIComponent(
+            role
+          )}`,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.message == "success") {
+              window.location.href = "/";
+            } else {
+              errorMessage.textContent = data.message || "Invalid details.";
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            errorMessage.textContent =
+              "An error occurred. Please try again later.";
+          });
+      });
+    </script>
+  </body>
+</html>

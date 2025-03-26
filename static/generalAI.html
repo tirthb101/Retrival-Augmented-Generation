@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="icon" type="image/x-icon" href="/static/icon.png" />
+    <script src="/static/script.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ERDA PDF Asker</title>
+    <link href="/static/font.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/default.min.css" />
+    <script src="/static/highlights.min.js"></script>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: linear-gradient(135deg, #f6f8fd 0%, #f1f4f9 100%);
+        font-family: "Inter", sans-serif;
+        margin: 0;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .instructions-panel {
+        width: 60%;
+        background: #0f3c69;
+        padding: 24px;
+        height: 100vh;
+        border-right: 1px solid #e2e8f0;
+        box-shadow: 4px 0 12px rgba(0, 0, 0, 0.05);
+        overflow-y: scroll;
+
+        &::-webkit-scrollbar {
+          display: none;
+        }
+
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+
+      .instructions-panel h1 {
+        color: white;
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .instructions-panel h2 {
+        color: #f7b90f;
+        font-size: 1.1rem;
+        margin: 1.5rem 0 0.75rem 0;
+      }
+
+      .instructions-panel p {
+        margin-bottom: 1rem;
+        line-height: 1.6;
+        color: white;
+      }
+      .tts-button {
+        background-color: #f7b90f;
+        padding: 5px;
+        border: none;
+        border-radius: 4px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+
+      .instructions-panel ul {
+        margin-left: 1.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .instructions-panel li {
+        margin-bottom: 0.5rem;
+        color: white;
+      }
+
+      .example-query {
+        background: #f7b90f;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid black;
+        margin: 0.5rem 0;
+        font-size: 0.9rem;
+        color: black;
+      }
+
+      .main-content {
+        flex-grow: 1;
+        display: flex;
+        justify-content: flex-start;
+        padding: 0;
+        max-width: 100vw;
+      }
+
+      .chat-container {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        height: 95vh;
+        margin: 20px;
+        position: relative;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+
+      .chat-messages {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 10px 5px;
+        scroll-behavior: smooth;
+        margin-bottom: 8px;
+        position: relative;
+      }
+
+      .chat-messages::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .chat-messages::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      .chat-messages::-webkit-scrollbar-thumb {
+        background: #cbd5e0;
+        border-radius: 3px;
+      }
+
+      .message {
+        border-radius: 18px;
+        padding: 12px 18px;
+        margin-bottom: 12px;
+        max-width: 85%;
+        clear: both;
+        line-height: 1.5;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .user-message {
+        background: #0f3c69;
+        color: white;
+        margin-left: auto;
+        border-bottom-right-radius: 6px;
+      }
+
+      .bot-message {
+        /* background: #f7fafc; */
+        background: #5ba4df4d;
+        border: 1px solid #e2e8f0;
+        margin-right: auto;
+        padding: 5%;
+
+        border-bottom-left-radius: 6px;
+      }
+
+      .loading-container {
+        display: none;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 12px 16px;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        margin-bottom: 16px;
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+      }
+
+      .loading-spinner {
+        width: 24px;
+        height: 24px;
+        border: 3px solid #e2e8f0;
+        border-top: 3px solid #0f3c69;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      .input-area {
+        display: flex;
+        gap: 12px;
+        padding: 8px;
+        background: #f7fafc;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+      }
+
+      .input-area input[type="text"] {
+        flex-grow: 1;
+        padding: 12px 16px;
+        border: none;
+        border-radius: 12px;
+        outline: none;
+        font-size: 0.95rem;
+        background: transparent;
+        color: #2d3748;
+        font-family: "Inter", sans-serif;
+        width: 5%;
+      }
+
+      .input-area input[type="text"]::placeholder {
+        color: #a0aec0;
+      }
+
+      .input-area button {
+        background: #f7b90f;
+        color: black;
+        border: none;
+        border-radius: 12px;
+        padding: 12px 24px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: "Inter", sans-serif;
+      }
+
+      .input-area button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(91, 164, 223, 0.3);
+      }
+
+      .input-area button:active {
+        transform: translateY(0);
+      }
+
+      .input-area button.voice-btn {
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        color: black;
+        justify-content: center;
+      }
+
+      .input-area button.voice-btn img {
+        width: 20px;
+        height: 20px;
+      }
+
+      .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .logo-section {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .logo-section img {
+        width: 55px;
+        height: 56px;
+        object-fit: contain;
+        background-color: white;
+        margin: 0;
+        border-radius: 1px;
+        border-color: black;
+      }
+
+      .logo-section h1 {
+        margin: 0;
+        color: white;
+        font-size: 1.5rem;
+        font-weight: 600;
+        font-family: "Inter", sans-serif;
+      }
+
+      .nav-buttons {
+        display: flex;
+        gap: 12px;
+      }
+
+      .nav-button {
+        background-color: #f7b90f;
+        color: #0f3c69;
+        padding: 10px 16px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid transparent;
+      }
+
+      .nav-button:hover {
+        background-color: #ffffff;
+        border-color: #f7b90f;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      .timestamp {
+        font-size: 11px;
+        margin-top: 4px;
+        opacity: 0.7;
+      }
+
+      .bot-message .timestamp {
+        text-align: left;
+      }
+
+      .user-message .timestamp {
+        text-align: right;
+      }
+
+      @media (max-width: 768px) {
+        .header-container {
+          flex-direction: column;
+          gap: 16px;
+          align-items: flex-start;
+        }
+
+        .nav-buttons {
+          width: 100%;
+          justify-content: space-between;
+        }
+
+        .nav-button {
+          flex: 1;
+          text-align: center;
+        }
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (max-width: 768px) {
+        body {
+          flex-direction: column;
+        }
+
+        .instructions-panel {
+          width: 100%;
+          height: auto;
+          border-right: none;
+          border-bottom: 1px solid #e2e8f0;
+          overflow-y: none;
+        }
+        .main-content {
+          padding: 12px;
+          width: 100%;
+          margin: 0;
+        }
+        .chat-container {
+          width: 100%;
+          height: auto;
+          margin: 0;
+        }
+      }
+      @media (max-width: 480px) {
+        .chat-container {
+          height: 90vh;
+          padding: 16px;
+        }
+        .input-area #user-input {
+          max-width: 59%;
+        }
+        .input-area button {
+          padding: 8px 12px;
+          max-width: 22%;
+        }
+        .input-area input[type="text"] {
+          padding: 10px 12px;
+        }
+      }
+      @media (min-width: 768px) {
+        .main-content {
+          width: 40vw;
+        }
+        .instructions-panel {
+          width: 60vw;
+        }
+      }
+      @media (min-width: 768px) and (max-width: 1090px) {
+        .instructions-panel {
+          height: 100vh;
+          overflow-y: auto;
+        }
+      }
+
+      .department-select-container {
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .department-select-container label {
+        font-weight: 500;
+        color: #374151;
+      }
+
+      .department-select-container select {
+        padding: 8px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        color: #2d3748;
+        background-color: white;
+        outline: none;
+        transition: border-color 0.2s ease;
+        font-family: "Inter", sans-serif;
+      }
+
+      .department-select-container select:focus {
+        border-color: #f7b90f;
+        box-shadow: 0 0 0 2px rgba(247, 185, 15, 0.2);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="instructions-panel">
+      <div class="header-container">
+        <div class="logo-section">
+          <img src="/static/icon.png" alt="ERDA Logo" />
+          <h1>ERDA Assistant</h1>
+        </div>
+        <div class="nav-buttons">
+          <a href="/" class="nav-button">ERDA Assistant</a>
+          <a
+            href="/generalAI"
+            class="nav-button"
+            style="background-color: white"
+            >General AI</a
+          >
+
+          <button
+            class="input-area nav-button"
+            style="background-color: red; color: white"
+            onclick="logout()"
+          >
+            Log out
+          </button>
+        </div>
+      </div>
+
+      <p>
+        Welcome to the ERDA knowledge base assistant. This system can help you
+        find information about ERDA's services, facilities, and operations.
+      </p>
+
+      <h2>How to Use</h2>
+      <ul>
+        <li>Type your question in natural language</li>
+        <li>Be specific about what information you need</li>
+      </ul>
+
+      <h2>Example Queries</h2>
+      <div class="example-query">"Provide me information about erda."</div>
+      <div class="example-query">
+        "What testing facilities are available at ERDA Vadodara?"
+      </div>
+      <div class="example-query">
+        "Tell me about ERDA's high voltage testing capabilities"
+      </div>
+
+      <h2>Tips</h2>
+      <ul>
+        <li>Use keywords related to specific departments or services</li>
+        <li>Ask one question at a time for best results</li>
+        <li>You can use voice input by clicking the microphone icon</li>
+      </ul>
+    </div>
+
+    <div class="main-content">
+      <div class="chat-container">
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="loading-container" id="loading-container">
+          <div class="loading-spinner"></div>
+        </div>
+        <div class="department-select-container">
+          <label for="department-select">Select Department:</label>
+          <select id="department-select">
+            <option value="erda">ERDA</option>
+            <option value="erp">ERP</option>
+            <option value="hr">HR</option>
+            <option value="legal">LEGAL</option>
+            <option value="quality">QUALITY</option>
+            <option value="it">IT</option>
+            <option value="senseless">Test</option>
+          </select>
+        </div>
+        <div class="input-area">
+          <input
+            type="text"
+            id="user-input"
+            placeholder="Type your message..."
+          />
+          <button onclick="sendMessage(false)">Send</button>
+          <button class="voice-btn" onclick="startVoiceInput()">
+            <img src="/static/mic.png" alt="Voice Input" />
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let conversationalContext = [];
+      const chatMessages = document.getElementById("chat-messages");
+      const userInput = document.getElementById("user-input");
+      const loadingContainer = document.getElementById("loading-container");
+      const deptInput = document.getElementById("department-select");
+      const voiceInput = document.getElementsByClassName("voice-btn")[0];
+      let currentController = null;
+      let textt = "";
+      let message = "";
+
+      function generateDepartmentPrompt(department) {
+        const baseMessage = `
+      You are an assistant designed to help users with general industry knowledge. While you may mention the Electrical Research and Development Association (ERDA) Vadodara campus for context, you have NOT been trained on or provided with ERDA's internal, confidential, or proprietary information. Your role is to assist users with queries related to {department} in a general sense.
+
+      IMPORTANT INSTRUCTIONS:
+      1. ✅ You may provide factual, general information about {generalTopic}.
+      2. ❌ DO NOT provide any specific details, assumptions, or guesses about ERDA Vadodara's internal procedures, systems, policies, or operations, as you do not have access to this information.
+      3. ❌ If asked about ERDA Vadodara-specific details, respond with:
+         "As an assistant, I can discuss {generalTopic} in general terms, but I do not have specific information on ERDA Vadodara's [topic]. I'm happy to share general industry best practices instead."
+      4. 🔄 Always clearly indicate whether your response is:
+         - General industry knowledge, or
+         - ERDA Vadodara-specific (only if explicitly and verifiably provided to you, which is unlikely).
+      5. 👋 In your first reply, greet the user and directly address their query, explicitly clarifying that your knowledge is based on general information, not internal ERDA data.
+      6. 🚫 Never invent, assume, or imply specific details about ERDA Vadodara's operations.
+
+      ⚠️ REMEMBER: Prioritize transparency about the limits of your knowledge. It is better to state that you do not have ERDA-specific details than to provide inaccurate or speculative information.
+        `.trim();
+
+        const departmentInfo = {
+          erda: {
+            department: "research and development organizations",
+            generalTopic: "research and development organizations",
+          },
+          erp: {
+            department: "enterprise resource planning systems",
+            generalTopic: "enterprise resource planning systems",
+          },
+          hr: {
+            department: "human resources management",
+            generalTopic: "human resources management",
+          },
+          legal: {
+            department: "legal and compliance issues in research organizations",
+            generalTopic:
+              "legal and compliance issues in research organizations",
+          },
+          quality: {
+            department: "quality management systems",
+            generalTopic: "quality management systems",
+          },
+          it: {
+            department: "IT infrastructure in research organizations",
+            generalTopic: "IT infrastructure in research organizations",
+          },
+          senseless: {
+            department: "test responses",
+            generalTopic: "test scenarios",
+          },
+          default: {
+            department: "research and development organizations",
+            generalTopic: "research and development organizations",
+          },
+        };
+        const info = departmentInfo[department] || departmentInfo["default"];
+
+        return baseMessage
+          .replace("{department}", info.department)
+          .replace(/{generalTopic}/g, info.generalTopic); // Handles multiple occurrences
+      }
+
+      window.addEventListener("beforeunload", (event) => {
+        window.speechSynthesis.cancel();
+      });
+      window.addEventListener("load", () => {
+        initializeChat();
+      });
+
+      deptInput.addEventListener("change", () => {
+        initializeChat();
+      });
+
+      async function initializeChat() {
+        message = generateDepartmentPrompt(deptInput.value);
+        sendMessage(true);
+        chatMessages.innerHTML = "";
+      }
+
+      function sendMessage(loading) {
+        voiceInput.disabled = true;
+        userInput.disabled = true;
+        if (!loading) {
+          message = userInput.value;
+          if (message.trim() === "") return;
+          displayMessage(message, "user");
+          conversationalContext.push({ role: "user", content: message });
+          userInput.value = "";
+        } else {
+          conversationalContext = [];
+          conversationalContext.push({ role: "system", content: message });
+        }
+
+        loadingContainer.style.display = "flex";
+
+        currentController = new AbortController();
+
+        fetch("/askGeneral", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            context: conversationalContext,
+          }),
+          signal: currentController.signal,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (!loading) {
+              conversationalContext.push({
+                role: "assistant",
+                content: data.message,
+              });
+              displayMessage(data.message, "bot", data.time);
+            }
+          })
+          .catch((error) => {
+            if (error.name === "AbortError") {
+              displayMessage("Request cancelled by user", "bot");
+            } else {
+              displayMessage("Error: " + error, "bot");
+              console.error("Error:", error);
+            }
+          })
+          .finally(() => {
+            loadingContainer.style.display = "none";
+            voiceInput.disabled = false;
+            userInput.disabled = false;
+            hljs.highlightAll();
+            currentController = null;
+          });
+      }
+
+      function getFormattedTime() {
+        const now = new Date();
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+        const formattedHours = hours % 12 || 12;
+        const formattedMinutes = minutes < 10 ? "0" + minutes : minutes;
+        const ampm = hours >= 12 ? "PM" : "AM";
+        return `Today, ${formattedHours}:${formattedMinutes} ${ampm}`;
+      }
+      function displayMessage(message, sender, time_taken = 0) {
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("message", `${sender}-message`);
+        messageDiv.innerHTML = marked.parse(message);
+
+        if (sender === "bot") {
+          const ttsButton = document.createElement("button");
+          ttsButton.classList.add("tts-button");
+          ttsButton.title = "Listen to this message";
+          ttsButton.onclick = () => speak_stopMessage(message);
+          const ttsIcon = document.createElement("img");
+          ttsIcon.src = "/static/sound.png";
+          ttsIcon.style.width = "20px";
+          ttsIcon.style.height = "20px";
+          ttsButton.appendChild(ttsIcon);
+          messageDiv.appendChild(ttsButton);
+        }
+
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        const timestamp = document.createElement("div");
+        timestamp.classList.add("timestamp");
+        timestamp.textContent = getFormattedTime();
+        messageDiv.appendChild(timestamp);
+
+        if (sender === "bot") {
+          const timestamp = document.createElement("div");
+          timestamp.classList.add("timestamp");
+          timestamp.textContent = "Time Taken: " + time_taken;
+          messageDiv.appendChild(timestamp);
+        }
+      }
+
+      // Stream
+
+      // async function sendMessage() {
+      //   const message = userInput.value;
+
+      //   if (message.trim() === "") return;
+
+      //   displayMessage(message, "user");
+      //   conversationalContext.push({ role: "user", content: message });
+      //   userInput.value = "";
+
+      //   try {
+      //     const response = await fetch("/askGeneral", {
+      //       method: "POST",
+      //       headers: {
+      //         "Content-Type": "application/json",
+      //       },
+      //       body: JSON.stringify({
+      //         context: conversationalContext,
+      //       }),
+      //     });
+
+      //     if (!response.ok) {
+      //       throw new Error(`HTTP error! status: ${response.status}`);
+      //     }
+
+      //     // Create message container
+      //     const messageContainer = createMessageContainer("bot");
+      //     let accumulatedMessage = "";
+
+      //     // Create an EventSource from the response
+      //     const reader = response.body
+      //       .pipeThrough(new TextDecoderStream())
+      //       .getReader();
+
+      //     while (true) {
+      //       const { value, done } = await reader.read();
+      //       if (done) break;
+
+      //       // Parse SSE data
+      //       const lines = value.split("\n");
+      //       prev = "xyz";
+      //       for (const line of lines) {
+      //         if (line.startsWith("data: ")) {
+      //           const content = JSON.stringify(line.slice(6)).slice(1, -3);
+      //           // if (line.trim() === prev && prev === "") {
+      //           //   accumulatedMessage += "\n";
+      //           // }
+
+      //           // prev = line.trim();
+      //           if (content.trim() === "" && prev === "") {
+      //             accumulatedMessage += "\n";
+      //           }
+      //           accumulatedMessage += content;
+      //           // if ([".", ":"].includes(content)) {
+      //           //   accumulatedMessage += "\n";
+      //           // }
+
+      //           // Update the message container
+      //           messageContainer.innerHTML = marked.parse(accumulatedMessage);
+      //           hljs.highlightAll();
+      //           // messageContainer
+      //           //   .querySelectorAll("pre code")
+      //           //   .forEach((block) => {
+      //           //     hljs.highlightBlock(block);
+      //           //   });
+
+      //           // Scroll to bottom smoothly
+      //           chatMessages.scrollTo({
+      //             top: chatMessages.scrollHeight,
+      //             behavior: "smooth",
+      //           });
+      //           prev = content.trim();
+      //         }
+      //       }
+      //     }
+
+      //     // Add TTS button after message is complete
+      //     addTTSButton(messageContainer, accumulatedMessage);
+      //     conversationalContext.push({
+      //       role: "assistant",
+      //       content: accumulatedMessage,
+      //     });
+      //   } catch (error) {
+      //     displayMessage("Error: " + error, "bot");
+      //     console.error("Error:", error);
+      //   } finally {
+      //     loadingContainer.style.display = "none";
+      //   }
+      // }
+
+      // function addTTSButton(messageDiv, message) {
+      //   const ttsButton = document.createElement("button");
+      //   ttsButton.classList.add("tts-button");
+      //   ttsButton.title = "Listen to this message";
+      //   ttsButton.onclick = () => speak_stopMessage(messageDiv);
+
+      //   const ttsIcon = document.createElement("img");
+      //   ttsIcon.src = "/static/sound.png";
+      //   ttsIcon.style.width = "20px";
+      //   ttsIcon.style.height = "20px";
+
+      //   ttsButton.appendChild(ttsIcon);
+      //   messageDiv.appendChild(ttsButton);
+      // }
+
+      // function displayMessage(message, sender) {
+      //   const messageDiv = createMessageContainer(sender);
+      //   messageDiv.innerHTML = marked.parse(message);
+
+      //   if (sender === "bot") {
+      //     // Apply syntax highlighting to any code blocks
+      //     // messageDiv.querySelectorAll("pre code").forEach((block) => {
+      //     //   hljs.highlightBlock(block);
+      //     // });
+      //     addTTSButton(messageDiv, message);
+      //   }
+
+      //   chatMessages.scrollTop = chatMessages.scrollHeight;
+      // }
+
+      // function createMessageContainer(sender) {
+      //   const messageDiv = document.createElement("div");
+      //   messageDiv.classList.add("message", `${sender}-message`);
+      //   chatMessages.appendChild(messageDiv);
+      //   return messageDiv;
+      // }
+
+      const synth = window.speechSynthesis;
+      let globa_voice = [];
+
+      speechSynthesis.onvoiceschanged = function () {
+        voices = synth.getVoices();
+
+        const femaleVoices = voices.filter(
+          (voice) =>
+            voice.name.includes("female") || voice.name.includes("Female")
+        );
+        global_voice = femaleVoices;
+
+        const utterance = new SpeechSynthesisUtterance("Hello, this is a test");
+        utterance.voice = femaleVoices[0];
+
+        utterance.pitch = 1;
+        utterance.rate = 1;
+      };
+
+      function speak_stopMessage(text) {
+        if (textt != text) {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = "en-US";
+
+          utterance.voice = global_voice[0];
+          window.speechSynthesis.speak(utterance);
+          textt = text;
+        } else if (textt == text && textt != "") {
+          window.speechSynthesis.cancel();
+          textt = "";
+        }
+      }
+
+      userInput.addEventListener("keyup", function (event) {
+        if (event.key === "Enter") {
+          sendMessage();
+        }
+      });
+
+      function startVoiceInput() {
+        const recognition = new (window.SpeechRecognition ||
+          window.webkitSpeechRecognition)();
+        recognition.lang = "en-US";
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.start();
+
+        recognition.onresult = function (event) {
+          const transcript = event.results[0][0].transcript;
+          userInput.value = transcript;
+          sendMessage();
+        };
+
+        recognition.onerror = function (event) {
+          console.error("Speech recognition error:", event.error);
+        };
+
+        recognition.onspeechend = function () {
+          recognition.stop();
+        };
+      }
+      function logout() {
+        fetch("/logout")
+          .then((response) => {
+            if (response.redirected) {
+              window.location.href = response.url;
+            }
+          })
+          .catch((error) => {
+            console.error("Error logging-out:", error);
+          });
+      }
+    </script>
+  </body>
+</html>
