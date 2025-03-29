@@ -12,13 +12,14 @@ from tqdm import tqdm
 
 load_dotenv()
 
+device = "cuda:0"
 collection_name = os.getenv("COLLECTION")
 persist_directory = get_resource_path("db")
 client = chromadb.PersistentClient(path=persist_directory)
 collection = client.create_collection(
     collection_name, get_or_create=True)
 
-model = AutoModel.from_pretrained("BAAI/bge-large-en-v1.5")
+model = AutoModel.from_pretrained("BAAI/bge-large-en-v1.5").to(device)
 embed_tokenizer = AutoTokenizer.from_pretrained("BAAI/bge-large-en-v1.5")
 
 
@@ -60,9 +61,7 @@ def chunking_fucntion(text):
 
 def generate_embedings(text):
     intermediate = embed_tokenizer(text, padding=True,
-                                   truncation=True, max_length=500, return_tensors="pt")
-    intermediate = {key: value.to("cpu")
-                    for key, value in intermediate.items()}
+                                   truncation=True, max_length=500, return_tensors="pt").to(device)
     with torch.no_grad():
         output = model(**intermediate)
         embeddings = output.last_hidden_state.mean(dim=1)
@@ -99,12 +98,14 @@ def scrape_website(url, visited, links_global, links_file, output_file):
     for link in soup.find_all('a', href=True):
         absolute_url = link['href']
         wp_content = ("wp-login", "wp-content", "lostpassword", "wp-admin")
-        is_not_wp_content = any(keyword in absolute_url.lower() for keyword in wp_content)
+        is_not_wp_content = any(keyword in absolute_url.lower()
+                                for keyword in wp_content)
         is_new = absolute_url not in visited and absolute_url not in links_global
         contains_erda = "erda" in absolute_url
         is_http = "http" in absolute_url
-        forbidden_extensions = (".pdf", ".jpg", ".png", ".jpeg", "xml" )
-        is_forbidden_extension = any(ext in absolute_url.lower() for ext in forbidden_extensions)
+        forbidden_extensions = (".pdf", ".jpg", ".png", ".jpeg", "xml")
+        is_forbidden_extension = any(ext in absolute_url.lower()
+                                     for ext in forbidden_extensions)
 
         if is_new and contains_erda and is_http and not is_forbidden_extension and not is_not_wp_content:
             links_global.add(absolute_url)
