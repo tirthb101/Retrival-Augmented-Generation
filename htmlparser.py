@@ -18,7 +18,6 @@ collection = client.create_collection(
     collection_name, get_or_create=True)
 
 model = AutoModel.from_pretrained("BAAI/bge-large-en-v1.5")
-device = "cuda:0"
 embed_tokenizer = AutoTokenizer.from_pretrained("BAAI/bge-large-en-v1.5")
 
 
@@ -91,22 +90,22 @@ def scrape_website(url, visited, links_global, links_file, output_file):
 
     # Print the resulting chunks
     for idx, c in enumerate(chunks):
-        print(f"Chunk {idx+1}: {c}\n")
+        # print(f"Chunk {idx+1}: {c}\n")
         output_file.write(f"Chunk {idx+1}: {c}\n".encode("utf-8"))
     print(f"Number of semantic chunks: {len(chunks)}")
 
     # Extract and process links
     for link in soup.find_all('a', href=True):
         absolute_url = link['href']
-        is_not_wp_content = "wp-content" not in absolute_url
+        wp_content = ("wp-login", "wp-content", "lostpassword", "wp-admin")
+        is_not_wp_content = any(keyword in absolute_url.lower() for keyword in wp_content)
         is_new = absolute_url not in visited and absolute_url not in links_global
         contains_erda = "erda" in absolute_url
         is_http = "http" in absolute_url
-        forbidden_extensions = (".pdf", ".jpg", ".png", ".jpeg")
-        is_forbidden_extension = any(absolute_url.lower().endswith(
-            ext) for ext in forbidden_extensions)
+        forbidden_extensions = (".pdf", ".jpg", ".png", ".jpeg", "xml" )
+        is_forbidden_extension = any(ext in absolute_url.lower() for ext in forbidden_extensions)
 
-        if is_new and contains_erda and is_http and not is_forbidden_extension and is_not_wp_content:
+        if is_new and contains_erda and is_http and not is_forbidden_extension and not is_not_wp_content:
             links_global.add(absolute_url)
             links_file.write(absolute_url + '\n')
 
@@ -129,10 +128,8 @@ def get_erda_data():
                 url = links_global.pop()
                 if url not in visited:
                     visited.add(url)
-                    print("Started Scraping")
                     scrape_website(
                         url, visited, links_global, linkfile, textfile)
-                    print("Ended Scraping")
                 if len(visited) >= 200:
                     break
 
@@ -152,7 +149,7 @@ def add_data_to_do():
                 embeding], metadatas={"_department": "window"})
 
 
-# get_erda_data()
+get_erda_data()
 # add_data_to_do()
 
 
