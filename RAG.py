@@ -8,18 +8,6 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 import asyncio
 from htmlparser import chunking_fucntion
 from get_full_text import get_full_text
-import requests
-import json
-
-# Replace 'YOUR_GEMINI_API_KEY' with your actual Gemini API key
-API_KEY = "YOUR_GEMINI_API_KEY"
-MODEL_NAME = "gemini-2.0-flash"
-BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
-ENDPOINT = f"{BASE_URL}/{MODEL_NAME}:generateContent"
-
-headers = {
-    'Content-Type': 'application/json'
-}
 
 
 class Rag:
@@ -123,9 +111,6 @@ class Rag:
                 dim=1)
         return embeddings.squeeze().cpu().numpy()
 
-    async def generateSQL(self, user_query):
-        pass
-
     async def rerank(self, query, docs):
         scores = []
         for doc in docs:
@@ -158,9 +143,12 @@ class Rag:
             # print(context)
 
             # print(context["metadatas"])
-            context = await self.rerank(user_query, context["documents"][0])
-            print(context)
-            context = "\n\n".join(context)
+            _context = await self.rerank(user_query, context["documents"][0])
+            print(_context)
+            context = ""
+
+            for i in range(len(_context)):
+                context += f"\nChunk {i + 1}:\n" + _context[i]
 
             # lst = {"message": {"content": context}}
             # return lst
@@ -214,22 +202,6 @@ class Rag:
 {user_query}
 
 **Answer: **"""
-            # data = {
-            #     "contents": [
-            #         {
-            #             "parts": [{"text": prompt}]
-            #         }
-            #     ]
-            # }
-            # response = requests.post(ENDPOINT, headers=headers, params={
-            #                          'key': "AIzaSyDSk_2OGXqdj11TmM3hQFUgnFpCHUinSJ8"}, data=json.dumps(data))
-            # response.raise_for_status()  # Raise an exception for bad status codes
-
-            # json_response = response.json()
-            # print(json_response)
-            # data = json_response['candidates'][0]['content']['parts'][0]['text']
-            # print(data)
-            # return {"message": {"content": data}}
 
             return await asyncio.to_thread(ollama.chat, model=self.generation_model, messages=[{"role": "user", "content": prompt}])
         except Exception as e:

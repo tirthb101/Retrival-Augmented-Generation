@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/x-icon" href="/static/icon.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SQL Query Interface</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Segoe UI", "Roboto", "Arial", sans-serif;
+    }
+
+    body {
+      background-color: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* Main Container */
+    .main-container {
+      width: 90%; /* Adjust width for responsiveness */
+      max-width: 600px; /* Maximum width for larger screens */
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .header {
+      padding: 16px 20px;
+      background-color: #f7b90f;
+      color: #202124;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+    }
+
+    .header h3 {
+      font-size: clamp(16px, 2vw, 18px); /* Responsive font size */
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
+
+    /* Input Section */
+    .input-section {
+      padding: 20px;
+      background-color: #ffffff;
+      border-bottom: 1px solid #f1f3f4;
+    }
+
+    .input-section textarea {
+      width: 100%;
+      height: clamp(100px, 20vw, 150px); /* Responsive height */
+      padding: 12px;
+      border: 2px solid #dadce0;
+      border-radius: 8px;
+      outline: none;
+      font-size: clamp(12px, 1.5vw, 14px); /* Responsive font size */
+      resize: none;
+      transition: border-color 0.2s;
+    }
+
+    .input-section textarea:focus {
+      border-color: #0f3c69;
+    }
+
+    .input-section button {
+      width: 100%;
+      margin-top: 12px;
+      padding: clamp(10px, 1.5vw, 12px); /* Responsive padding */
+      background-color: #0f3c69;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: clamp(14px, 1.5vw, 16px); /* Responsive font size */
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .input-section button:hover {
+      background-color: #0c2d4e;
+    }
+
+    /* SQL Query Section */
+    .sql-query-section {
+      padding: 20px;
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #f1f3f4;
+    }
+
+    .sql-query-section pre {
+      font-size: clamp(12px, 1.5vw, 14px); /* Responsive font size */
+      line-height: 1.5;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      background-color: white;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Output Section */
+    .output-section {
+      flex: 1;
+      padding: 20px;
+      background-color: #f8f9fa;
+      overflow-y: auto;
+    }
+
+    .output-section pre {
+      font-size: clamp(12px, 1.5vw, 14px); /* Responsive font size */
+      line-height: 1.5;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      background-color: white;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Error Message */
+    .error-message {
+      color: #d32f2f;
+      font-size: clamp(12px, 1.5vw, 14px);
+      margin-top: 12px;
+      text-align: center;
+      display: none; /* Hidden by default */
+    }
+
+    /* Loading Indicator */
+    .loading-indicator {
+      display: none;
+      align-self: center;
+      margin: 16px 0;
+    }
+
+    .loading-dots {
+      display: flex;
+    }
+
+    .loading-dots div {
+      width: clamp(6px, 1vw, 8px); /* Responsive size */
+      height: clamp(6px, 1vw, 8px); /* Responsive size */
+      background-color: #0f3c69;
+      border-radius: 50%;
+      margin: 0 4px;
+      animation: bounce 1.4s infinite ease-in-out both;
+    }
+
+    .loading-dots div:nth-child(1) {
+      animation-delay: -0.32s;
+    }
+
+    .loading-dots div:nth-child(2) {
+      animation-delay: -0.16s;
+    }
+
+    @keyframes bounce {
+      0%, 80%, 100% {
+        transform: scale(0);
+      }
+      40% {
+        transform: scale(1);
+      }
+    }
+
+    /* Media Queries for Responsive Design */
+    @media (max-width: 768px) {
+      .main-container {
+        width: 95%; /* Increase width for smaller screens */
+      }
+
+      .header h3 {
+        font-size: 16px; /* Smaller font size for small screens */
+      }
+
+      .input-section textarea {
+        height: 100px; /* Fixed height for small screens */
+      }
+
+      .output-section pre,
+      .sql-query-section pre {
+        font-size: 12px; /* Smaller font size for small screens */
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <!-- Header -->
+    <div class="header" style="flex-direction: row; justify-content: left;">
+        <img
+          src="/static/icon.png"
+          alt="AI"
+          width="24"
+          height="24"
+          style="
+            margin-right: 8px;
+            vertical-align: middle;
+            background-color: #f7b90f;
+          "
+        />
+      <h3>SQL Query Interface</h3>
+    </div>
+
+    <!-- Input Section -->
+    <div class="input-section">
+      <textarea id="queryInput" placeholder="Enter your natural language query here..."></textarea>
+      <button id="executeButton" onclick="executeQuery()">Execute Query</button>
+      <div id="errorMessage" class="error-message">Please enter a valid query.</div>
+    </div>
+
+    <!-- SQL Query Section -->
+    <div class="sql-query-section">
+      <pre id="sqlQueryOutput">Generated SQL Query will appear here...</pre>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div class="loading-indicator" id="loadingIndicator">
+      <div class="loading-dots">
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+    </div>
+
+    <!-- Output Section -->
+    <!-- Output Section -->
+<div class="output-section">
+  <table id="queryOutputTable" style="display: none; width: 100%; border-collapse: collapse;">
+    <thead>
+    </thead>
+    <tbody>
+      <!-- Rows will be dynamically inserted here -->
+    </tbody>
+  </table>
+  <pre id="queryOutput">Results will appear here...</pre>
+</div>
+  </div>
+
+  <script>
+    // Function to execute the query and send it to the backend
+    async function executeQuery() {
+  const queryInput = document.getElementById('queryInput');
+  const sqlQueryOutput = document.getElementById('sqlQueryOutput');
+  const queryOutputTable = document.getElementById('queryOutputTable');
+  const queryOutput = document.getElementById('queryOutput');
+  const loadingIndicator = document.getElementById('loadingIndicator');
+  const errorMessage = document.getElementById('errorMessage');
+
+  const query = queryInput.value.trim();
+
+  // Clear previous outputs and hide error message
+  sqlQueryOutput.textContent = 'Generated SQL Query will appear here...';
+  queryOutputTable.style.display = 'none'; // Hide table initially
+  queryOutput.style.display = 'block'; // Show fallback pre element
+  queryOutput.textContent = 'Results will appear here...';
+  errorMessage.style.display = 'none';
+
+  // Validate input
+  if (!query) {
+    errorMessage.textContent = 'Error: Query cannot be empty.';
+    errorMessage.style.display = 'block';
+    return;
+  }
+
+  // Show loading indicator
+  loadingIndicator.style.display = 'flex';
+
+  try {
+    // Send the query to the backend via POST request
+    const response = await fetch('/database', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ query }),
+    });
+
+    // Parse the response
+    const data = await response.json();
+
+    // Handle backend errors
+    if (!response.ok) {
+      throw new Error(data.message || 'An error occurred while processing the query.');
+    }
+
+    // Display the generated SQL query
+    sqlQueryOutput.textContent = `Generated SQL Query:\n${data.sqlQuery}`;
+
+    // Transform and display the results
+    const results = data.results;
+    const headers = data.headers;
+
+    if (Array.isArray(results) && results.length > 0 && Array.isArray(headers)) {
+      // Dynamically generate the table header
+      const thead = queryOutputTable.querySelector('thead');
+      thead.innerHTML = ''; // Clear existing headers
+      const headerRow = document.createElement('tr');
+      headers.forEach(header => {
+        const th = document.createElement('th');
+        th.style.padding = '8px';
+        th.style.textAlign = 'left';
+        th.style.backgroundColor = '#f7b90f';
+        th.style.color = '#202124';
+        th.textContent = header.charAt(0).toUpperCase() + header.slice(1); // Capitalize the first letter
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+
+      // Dynamically generate the table rows
+      const tbody = queryOutputTable.querySelector('tbody');
+      tbody.innerHTML = ''; // Clear existing rows
+      results.forEach(row => {
+        const tr = document.createElement('tr');
+        row.forEach((cell, index) => {
+          const td = document.createElement('td');
+          td.style.padding = '8px';
+          td.style.borderBottom = '1px solid #dadce0';
+          td.textContent = cell;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+
+      // Show the table and hide the fallback pre element
+      queryOutputTable.style.display = 'table';
+      queryOutput.style.display = 'none';
+    } else {
+      queryOutput.textContent = 'No results found.';
+    }
+  } catch (error) {
+    // Handle errors during execution
+    errorMessage.textContent = `Error: ${error.message}`;
+    errorMessage.style.display = 'block';
+  } finally {
+    // Hide loading indicator
+    loadingIndicator.style.display = 'none';
+  }
+}
+
+    // Add event listener to trigger button click on "Enter" key press
+    document.getElementById('queryInput').addEventListener('keydown', function(event) {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault(); // Prevent adding a new line in the textarea
+        document.getElementById('executeButton').click(); // Trigger the button click
+      }
+    });
+  </script>
+</body>
+</html>

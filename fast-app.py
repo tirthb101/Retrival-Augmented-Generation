@@ -13,8 +13,10 @@ from werkzeug.security import check_password_hash, generate_password_hash
 import datetime
 from starlette.responses import Response
 from pydantic import BaseModel
+from EngToSql import generateSql, getQueryResult
 from functools import wraps
 from dotenv import load_dotenv
+import re
 
 load_dotenv()
 
@@ -27,7 +29,7 @@ collection_name = os.getenv("COLLECTION")
 
 rag = Rag(collection_name=collection_name)
 
-app = FastAPI()
+app = FastAPI(debug=os.getenv("DEBUG"))
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -54,6 +56,9 @@ ALGORITHM = os.getenv("ALGORITHM") if os.getenv("ALGORITHM") else "HS256"
 
 class GeneralAIRequest(BaseModel):
     context: List[Dict[str, Any]] = []
+
+class DBRequest(BaseModel):
+    query : str
 
 
 def token_required(func: Callable):
@@ -85,6 +90,11 @@ async def get_login_form():
 @app.get("/register")
 async def get_register_form():
     return FileResponse(os.path.join(get_resource_path("static"), "register.html"))
+
+@app.get("/database")
+@token_required
+async def getDB(request: Request):
+    return FileResponse(os.path.join(get_resource_path("static"), "database.html"))
 
 
 @app.post("/login")
@@ -209,6 +219,33 @@ async def get_upload_form(request: Request):
 @token_required
 async def get_general_ai(request: Request):
     return FileResponse(os.path.join(get_resource_path("static"), "generalAI.html"))
+
+
+@app.post("/database")
+@token_required
+async def postDB(request: Request, request_data: DBRequest):
+    before = datetime.datetime.utcnow()
+    count = 0
+    for i in range(5):
+        try:
+            count += 1
+            sql = generateSql(request_data.query)
+            print(sql)
+            # sql = re.search(r"(SELECT.*?);(?!\w)", sql, re.IGNORECASE | re.DOTALL).group(0)
+            sql = re.search(r"SELECT.*", sql, re.IGNORECASE | re.DOTALL).group(0)
+            if not sql:
+                raise Exception()
+            result = getQueryResult(sql)
+            after = datetime.datetime.utcnow()
+            if not result:
+                continue
+            
+            return JSONResponse({"sqlQuery": sql, "results": result[1], "headers" : result[0], "shots": count})
+        except Exception as e:
+            pass
+    return JSONResponse({"message": str(e)}, status_code=500)
+
+
 
 
 @app.post("/upload")
@@ -394,4 +431,4 @@ async def catch_all(request: Request, full_path: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("fast-app:app", host="127.0.0.4", port=4000)
+    uvicorn.run("fast-app:app", host="127.0.0.4", port=4000, reload=os.getenv("RELOAD"))
