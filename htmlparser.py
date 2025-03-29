@@ -8,6 +8,7 @@ import chromadb
 import uuid
 import os
 from dotenv import load_dotenv
+from tqdm import tqdm
 
 load_dotenv()
 
@@ -141,7 +142,7 @@ def add_data_to_do():
         print(collection.count())
 
         lines = file.readlines()
-        for line in lines:
+        for line in tqdm(lines):
             chunk = str(line).split(":")
             chunk = "".join(chunk[1:])
             embeding = generate_embedings(chunk)
@@ -149,8 +150,8 @@ def add_data_to_do():
                 embeding], metadatas={"_department": "window"})
 
 
-get_erda_data()
-# add_data_to_do()
+# get_erda_data()
+add_data_to_do()
 
 
-# print(len(collection.get(where={"_department": "window"}, )["documents"]))
+print(len(collection.get(where={"_department": "window"}, )["documents"]))

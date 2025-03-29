@@ -189,5 +189,5 @@ def generateSchema():
 
 if __name__ == "__main__":
     # create_complex_database_with_data()
-    generateSchema()
+    # generateSchema()
     pass
